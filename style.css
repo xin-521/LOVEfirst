@@ -1,0 +1,166 @@
+/* Use the CSS from response #4 or #8 - the one where button scaling worked */
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #e0c7e0;
+    font-family: sans-serif;
+}
+
+.container {
+    position: relative;
+    width: 300px;
+    height: 500px;
+    background-color: #f8e7f0;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 40px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+#initialScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+     /* Added for smooth fade out */
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+}
+
+#character, #happyCharacter {
+    width: 100px;
+    height: auto;
+    margin-bottom: 25px;
+}
+
+.question {
+    font-size: 1.2em;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.buttons-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    min-height: 50px;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+    flex-shrink: 0;
+}
+
+#yesButton {
+    background-color: #e799a3;
+    color: white;
+}
+
+#noButton {
+    background-color: #a7c7e7;
+    color: white;
+    opacity: 1;
+}
+
+#yesButton:hover {
+    background-color: #d68993;
+}
+
+#noButton:hover {
+   background-color: #97b7d7;
+}
+
+/* Style for when the 'No' button should be hidden */
+#noButton.hidden-final {
+    opacity: 0;
+    transform: scale(0);
+    pointer-events: none;
+}
+
+/* Success Screen Styling */
+#successScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f8e7f0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+    box-sizing: border-box;
+    padding: 20px;
+}
+
+#successScreen.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.success-text {
+    font-size: 1.4em;
+    color: #d6336c;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+/* Helper class to hide elements initially */
+.hidden {
+    /* Use display: none ONLY for initial hiding of success screen */
+    /* Do not use display: none for initialScreen fade out */
+    display: none;
+}
+
+/* Style for the record icon */
+.record-icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background-color: black;
+    border-radius: 50%;
+    border: 2px solid white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.record-icon::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background-color: #f8e7f0;
+    border-radius: 50%;
+}
