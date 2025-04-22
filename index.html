@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>可以成为我的恋人吗？</title>
+    <!-- Changed Title -->
+    <title>做我的女朋友吧？</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,8 +14,8 @@
             <!-- Character Image -->
             <img id="character" src="images/char-initial.png" alt="Cute Character">
 
-            <!-- Question -->
-            <p class="question">可以成为我的恋人吗？</p>
+            <!-- Question (Changed Text) -->
+            <p class="question">做我的女朋友吧？</p>
 
             <!-- Buttons -->
             <div class="buttons-wrapper">
@@ -31,14 +32,18 @@
             <p class="success-text">!!!喜欢你!! (>‿<)♡</p>
         </div>
 
+        <!-- Goodbye Message Container (Initially Empty) -->
+        <div id="goodbyeContainer" class="hidden">
+             <p id="goodbyeMessageText" class="goodbye-message"></p>
+        </div>
+
+
         <!-- Record Icon (Top Right) -->
         <div class="record-icon"></div>
     </div>
 
     <!-- Background Music -->
-    <!-- === VERIFY THIS PATH === -->
     <audio id="bgMusic" src="music/love_story.mp3" loop></audio>
-    <!-- ======================= -->
 
     <script src="script.js"></script>
 </body>

@@ -1,4 +1,72 @@
-/* Use the CSS from response #4 or #8 - the one where button scaling worked */
+/* Add these new styles to your existing style.css */
+/* Make sure the container can hold absolutely positioned elements */
+.container {
+    position: relative; /* Needed for absolute positioning */
+    /* ... keep all your existing container styles ... */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Adjust if needed */
+    width: 300px;
+    height: 500px;
+    background-color: #f8e7f0;
+    border-radius: 15px;
+    padding: 20px;
+    padding-top: 40px; /* Keep padding */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* Styles for the goodbye message container and text */
+#goodbyeContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex; /* Use flex to center content */
+    justify-content: center;
+    align-items: center;
+    background-color: #f8e7f0; /* Match background */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+    z-index: 20; /* Ensure it's above initialScreen if transitions overlap */
+}
+
+#goodbyeContainer.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.goodbye-message {
+    font-size: 1.8em; /* Make text noticeable */
+    color: #555;     /* Softer color */
+    font-weight: bold;
+    text-align: center;
+    padding: 20px;     /* Add some padding */
+}
+
+
+/* Keep all your other existing CSS rules for body, initialScreen, */
+/* #character, .question, .buttons-wrapper, .buttons, button, */
+/* #yesButton, #noButton, #noButton.hidden-final, #successScreen, */
+/* #successScreen.visible, .success-text, .record-icon etc. */
+/* Make sure the .hidden class still uses display: none */
+.hidden {
+    display: none;
+}
+
+/* Ensure initial screen hides properly */
+#initialScreen.hidden-final {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+    pointer-events: none;
+}
+
+/* Example of existing styles (ensure they are present) */
 body {
     margin: 0;
     padding: 0;
@@ -10,29 +78,12 @@ body {
     font-family: sans-serif;
 }
 
-.container {
-    position: relative;
-    width: 300px;
-    height: 500px;
-    background-color: #f8e7f0;
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 40px;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
 #initialScreen {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
     text-align: center;
-     /* Added for smooth fade out */
     opacity: 1;
     visibility: visible;
     transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
@@ -95,14 +146,13 @@ button {
    background-color: #97b7d7;
 }
 
-/* Style for when the 'No' button should be hidden */
 #noButton.hidden-final {
     opacity: 0;
     transform: scale(0);
     pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease; /* Add transition */
 }
 
-/* Success Screen Styling */
 #successScreen {
     position: absolute;
     top: 0;
@@ -120,6 +170,7 @@ button {
     transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
     box-sizing: border-box;
     padding: 20px;
+    z-index: 15; /* Below goodbye message but above initial */
 }
 
 #successScreen.visible {
@@ -134,14 +185,6 @@ button {
     margin-top: 20px;
 }
 
-/* Helper class to hide elements initially */
-.hidden {
-    /* Use display: none ONLY for initial hiding of success screen */
-    /* Do not use display: none for initialScreen fade out */
-    display: none;
-}
-
-/* Style for the record icon */
 .record-icon {
     position: absolute;
     top: 15px;

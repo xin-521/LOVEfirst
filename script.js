@@ -2,12 +2,14 @@
 const mainContainer = document.getElementById('mainContainer');
 const initialScreen = document.getElementById('initialScreen');
 const successScreen = document.getElementById('successScreen');
-const character = document.getElementById('character'); // 小人的图片元素
+const goodbyeContainer = document.getElementById('goodbyeContainer'); // New container
+const goodbyeMessageText = document.getElementById('goodbyeMessageText'); // New text element
+const character = document.getElementById('character');
 const yesButton = document.getElementById('yesButton');
 const noButton = document.getElementById('noButton');
-const bgMusic = document.getElementById('bgMusic'); // *** Audio Element ***
+const bgMusic = document.getElementById('bgMusic');
 
-// Image sources (确保路径正确)
+// Image sources
 const initialCharSrc = 'images/char-initial.png';
 const confusedCharSrc = 'images/char-confused.png';
 const angryCharSrc = 'images/char-angry.png';
@@ -17,43 +19,61 @@ const happyCharSrc = 'images/char-happy.png';
 // Scaling parameters
 let yesScale = 1.0;
 let noScale = 1.0;
-const scaleIncrement = 0.2; // "可以" 每次增大比例
-const shrinkDecrement = 0.15; // "不要" 每次缩小比例
+const scaleIncrement = 0.2;
+const shrinkDecrement = 0.15;
 let targetYesWidth = null;
 let originalYesWidth = null;
 
-// Flags
+// Flags and State
 let scalingActive = true;
 let isNoButtonClicked = false;
-let musicStarted = false; // Flag to track if music has successfully started
+let musicStarted = false;
+let goodbyeTimeoutId = null; // <<<--- ID for the goodbye timeout
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM Loaded. Initializing...");
-
-    // Check if elements exist
-    if (!mainContainer || !initialScreen || !successScreen || !character || !yesButton || !noButton) {
-        console.error("One or more essential visual elements not found!");
+    if (!mainContainer || !initialScreen || !successScreen || !goodbyeContainer || !goodbyeMessageText || !character || !yesButton || !noButton) {
+        console.error("One or more essential elements not found!");
+        return; // Stop if critical elements are missing
     }
-    if (!bgMusic) {
-        console.warn("Audio element #bgMusic not found.");
+    if (!bgMusic) console.warn("Audio element #bgMusic not found.");
+
+    // Calculate button widths
+    originalYesWidth = yesButton.offsetWidth;
+    const containerPaddingLeft = parseFloat(getComputedStyle(mainContainer).paddingLeft);
+    const containerPaddingRight = parseFloat(getComputedStyle(mainContainer).paddingRight);
+    const availableWidth = mainContainer.clientWidth - containerPaddingLeft - containerPaddingRight;
+    targetYesWidth = availableWidth * 0.75; // Target 75% width
+    console.log(`Original Yes Width: ${originalYesWidth}, Target Yes Width: ${targetYesWidth}`);
+
+    // Reset visual state
+    resetVisualState();
+
+    // Reset flags
+    scalingActive = true;
+    isNoButtonClicked = false;
+    yesScale = 1.0;
+    noScale = 1.0;
+    if (goodbyeTimeoutId) { // Clear any leftover timeout from previous state
+        clearTimeout(goodbyeTimeoutId);
+        goodbyeTimeoutId = null;
     }
 
-    // Get original width and calculate target width
-    if (yesButton && mainContainer) {
-        originalYesWidth = yesButton.offsetWidth;
-        const containerPaddingLeft = parseFloat(getComputedStyle(mainContainer).paddingLeft);
-        const containerPaddingRight = parseFloat(getComputedStyle(mainContainer).paddingRight);
-        const availableWidth = mainContainer.clientWidth - containerPaddingLeft - containerPaddingRight;
-        targetYesWidth = availableWidth * 0.75;
-        console.log(`Original Yes Width: ${originalYesWidth}, Target Yes Width: ${targetYesWidth}, Available Width: ${availableWidth}`);
-    } else {
-        console.error("Cannot calculate button widths.");
-        targetYesWidth = 200; // Default fallback
-        originalYesWidth = 100; // Default fallback
-    }
+    // Add event listeners
+    removeNoButtonListeners(); // Clear first
+    addNoButtonListeners();
+    yesButton.removeEventListener('click', handleYesClick);
+    yesButton.addEventListener('click', handleYesClick);
 
-    // Explicitly Reset Initial State (Visuals)
+    console.log("Initialization complete.");
+
+    // Attempt Autoplay Music
+    attemptAutoplay();
+});
+
+// --- Reset Visual State Function ---
+function resetVisualState() {
     if (character) character.src = initialCharSrc;
     if (yesButton) {
         yesButton.style.transform = 'scale(1)';
@@ -65,57 +85,56 @@ document.addEventListener('DOMContentLoaded', () => {
         noButton.style.opacity = '1';
         noButton.classList.remove('hidden-final');
         noButton.style.pointerEvents = 'auto';
-        noButton.style.display = 'inline-block';
-        console.log("Initial button styles set. No button opacity:", noButton.style.opacity, "transform:", noButton.style.transform);
+        noButton.style.display = 'inline-block'; // Ensure it's visible
     }
     if (initialScreen) {
         initialScreen.style.opacity = '1';
         initialScreen.style.visibility = 'visible';
+        initialScreen.classList.remove('hidden-final'); // Remove hiding class
+        initialScreen.style.display = 'flex'; // Ensure it's visible
     }
-     if (successScreen) {
-        successScreen.classList.add('hidden'); // Use display: none initially
+    if (successScreen) {
+        successScreen.classList.add('hidden');
         successScreen.classList.remove('visible');
+    }
+     if (goodbyeContainer) { // Reset goodbye screen too
+        goodbyeContainer.classList.add('hidden');
+        goodbyeContainer.classList.remove('visible');
      }
+     if (goodbyeMessageText) {
+        goodbyeMessageText.textContent = ''; // Clear text
+     }
+    console.log("Visual state reset.");
+}
 
 
-    // Reset flags
-    scalingActive = true;
-    isNoButtonClicked = false;
-    yesScale = 1.0;
-    noScale = 1.0;
-
-    // Add event listeners
-    if (noButton) {
-        removeNoButtonListeners();
-        addNoButtonListeners();
-    }
-    if (yesButton) {
-        yesButton.removeEventListener('click', handleYesClick);
-        yesButton.addEventListener('click', handleYesClick);
-    }
-
-    console.log("Initialization complete. Visual elements set. Event listeners added.");
-
-    // --- Attempt to Play Background Music On Load ---
+// --- Autoplay Music ---
+function attemptAutoplay() {
     if (bgMusic) {
         console.log("Attempting to autoplay background music...");
         const playPromise = bgMusic.play();
-
         if (playPromise !== undefined) {
-            playPromise.then(_ => {
+            playPromise.then(() => {
                 console.log("Background music autoplay started successfully.");
                 musicStarted = true;
             }).catch(error => {
                 console.error("Background music autoplay failed:", error);
-                console.warn("Browser likely blocked autoplay. Music might start after user interaction.");
                 musicStarted = false;
             });
-        } else {
-            console.warn("Audio play() did not return a promise.");
         }
     }
-    // --- End of Initialization ---
-});
+}
+
+// --- Play Music Manually (Fallback) ---
+function playMusicManually() {
+    if (!musicStarted && bgMusic) {
+        console.log("Attempting manual audio play...");
+        bgMusic.play().then(() => {
+            musicStarted = true;
+            console.log("Manual play successful.");
+        }).catch(e => console.error("Manual play failed:", e));
+    }
+}
 
 // --- "不要" Button Interaction Logic ---
 function handleNoMouseOver() {
@@ -129,51 +148,49 @@ function handleNoMouseOut() {
      }
 }
 function handleNoClick() {
-    // Fallback audio trigger
-    if (!musicStarted && bgMusic) {
-        console.log("Attempting manual audio play on No click...");
-        bgMusic.play().then(() => { musicStarted = true; console.log("Manual play successful."); })
-                      .catch(e => console.error("Manual play failed on No click:", e));
-    }
+    playMusicManually(); // Try to play music on interaction
 
-    // Button Scaling Logic
-    console.log("No button clicked. Scaling active:", scalingActive);
     if (!scalingActive || !originalYesWidth || !yesButton || !noButton || !character) return;
 
     if (!isNoButtonClicked) {
         isNoButtonClicked = true;
         character.src = angryCharSrc;
-        console.log("First click on No. Character set to angry.");
     }
 
-    console.log(`Before scale update - Yes Scale: ${yesScale}, No Scale: ${noScale}`);
     const currentYesWidth = originalYesWidth * yesScale;
-    console.log(`Current Yes Width: ${currentYesWidth}, Target Yes Width: ${targetYesWidth}`);
-
     const yesIsLargeEnough = currentYesWidth >= targetYesWidth;
-    const noIsTooSmall = noScale <= shrinkDecrement;
-    console.log(`Check hide condition: yesIsLargeEnough=${yesIsLargeEnough}, noIsTooSmall=${noIsTooSmall}`);
+    const noIsTooSmall = noScale <= shrinkDecrement; // Check if scale would go to 0 or less
 
     if (yesIsLargeEnough || noIsTooSmall) {
-        console.log("Condition met: Hiding No button and finalizing Yes button size.");
-        yesScale = targetYesWidth / originalYesWidth;
-        noScale = 0;
+        // --- Final "No" click ---
+        console.log("Condition met: Hiding No button.");
+        yesScale = targetYesWidth / originalYesWidth; // Set final size for Yes
+        noScale = 0; // Ensure No button scale is 0
         yesButton.style.transform = `scale(${yesScale})`;
         noButton.style.transform = 'scale(0)';
-        noButton.classList.add('hidden-final');
+        noButton.classList.add('hidden-final'); // Apply class for potential transition/hiding
         noButton.style.pointerEvents = 'none';
-        scalingActive = false;
-        removeNoButtonListeners();
+        scalingActive = false; // Stop further scaling
+        removeNoButtonListeners(); // Remove listeners from No button
         character.src = sadCharSrc;
-        console.log("No button hidden. Character set to sad. Scaling deactivated.");
+        console.log("No button hidden. Scaling deactivated. Character sad.");
+
+        // --- Start the Goodbye Timeout ---
+        if (goodbyeTimeoutId) clearTimeout(goodbyeTimeoutId); // Clear previous just in case
+        goodbyeTimeoutId = setTimeout(showGoodbyeMessage, 5000); // 5 seconds
+        console.log(`Goodbye timeout started (ID: ${goodbyeTimeoutId}). Will trigger in 3s.`);
+        // --------------------------------
+
     } else {
-        console.log("Condition not met: Scaling buttons.");
+        // --- Intermediate "No" click ---
         yesScale += scaleIncrement;
         noScale -= shrinkDecrement;
-        noScale = Math.max(0, noScale);
-        console.log(`After scale update - Yes Scale: ${yesScale}, No Scale: ${noScale}`);
+        noScale = Math.max(0, noScale); // Don't go below 0
+
         yesButton.style.transform = `scale(${yesScale})`;
         noButton.style.transform = `scale(${noScale})`;
+
+        // Change to sad character earlier if No button gets small
         if (noScale < 0.7 && character.src !== sadCharSrc && isNoButtonClicked) {
              character.src = sadCharSrc;
              console.log("No button shrinking. Character set to sad.");
@@ -185,49 +202,82 @@ function addNoButtonListeners() {
     noButton.addEventListener('mouseover', handleNoMouseOver);
     noButton.addEventListener('mouseout', handleNoMouseOut);
     noButton.addEventListener('click', handleNoClick);
-    console.log("No button listeners added.");
 }
 function removeNoButtonListeners() {
     if (!noButton) return;
     noButton.removeEventListener('mouseover', handleNoMouseOver);
     noButton.removeEventListener('mouseout', handleNoMouseOut);
     noButton.removeEventListener('click', handleNoClick);
-    console.log("No button listeners removed.");
 }
 
 // --- "可以" Button Logic ---
 function handleYesClick() {
-     // Fallback audio trigger
-    if (!musicStarted && bgMusic) {
-        console.log("Attempting manual audio play on Yes click...");
-        bgMusic.play().then(() => { musicStarted = true; console.log("Manual play successful."); })
-                      .catch(e => console.error("Manual play failed on Yes click:", e));
-    }
+    playMusicManually(); // Try to play music on interaction
 
-    // Success Screen Logic
+    // --- Cancel the Goodbye Timeout if it's running ---
+    if (goodbyeTimeoutId) {
+        clearTimeout(goodbyeTimeoutId);
+        goodbyeTimeoutId = null;
+        console.log("Goodbye timeout cancelled because 'Yes' was clicked.");
+    }
+    // -------------------------------------------------
+
     console.log("Yes button clicked.");
     if (!initialScreen || !successScreen || !character) return;
 
-    scalingActive = false;
-    isNoButtonClicked = false;
-    removeNoButtonListeners();
+    scalingActive = false; // Stop any scaling
+    isNoButtonClicked = false; // Reset flag
+    removeNoButtonListeners(); // Remove listeners from No button
 
-    character.src = happyCharSrc;
-    console.log("Character set to happy.");
+    character.src = happyCharSrc; // Show happy character immediately
 
+    // Start transition to success screen
     setTimeout(() => {
-        console.log("Starting transition to success screen.");
-        initialScreen.style.opacity = '0';
-        initialScreen.style.visibility = 'hidden';
-        if (noButton) noButton.style.display = 'none';
+        console.log("Fading out initial screen for success.");
+        initialScreen.classList.add('hidden-final'); // Use class to fade out
+        if (noButton) noButton.style.display = 'none'; // Hide No button completely
 
-        successScreen.classList.remove('hidden'); // Set display from none to block/flex etc.
-        setTimeout(() => {
-            successScreen.classList.add('visible'); // Start opacity transition
+        successScreen.classList.remove('hidden'); // Remove display: none
+        setTimeout(() => { // Short delay for display change to register
+            successScreen.classList.add('visible'); // Start fade-in
             console.log("Success screen made visible.");
-        }, 50); // Short delay necessary after changing display
+        }, 50);
 
-    }, 150);
+    }, 150); // Small delay after click
+}
+
+
+// --- Goodbye Message Logic ---
+function showGoodbyeMessage() {
+    console.log("Timeout expired. Showing goodbye message sequence.");
+    goodbyeTimeoutId = null; // Mark timeout as finished
+
+    if (!initialScreen || !goodbyeContainer || !goodbyeMessageText) {
+        console.error("Cannot show goodbye message - elements missing.");
+        return;
+    }
+
+    // 1. Hide the initial screen content immediately
+    initialScreen.style.transition = 'none'; // Disable transitions for immediate hide
+    initialScreen.style.display = 'none';
+    console.log("Initial screen hidden for goodbye message.");
+
+    // 2. Prepare and show "好吧"
+    goodbyeMessageText.textContent = '好吧😂';
+    goodbyeContainer.classList.remove('hidden'); // Remove display: none
+    setTimeout(() => { // Short delay for display change
+        goodbyeContainer.classList.add('visible'); // Start fade-in
+        console.log("Displayed '好吧'.");
+
+        // 3. Schedule change to "祝你幸福"
+        setTimeout(() => {
+            if (goodbyeMessageText) { // Check if element still exists
+                 goodbyeMessageText.textContent = '祝你幸福😅';
+                 console.log("Changed text to '祝你幸福'.");
+            }
+        }, 1500); // Wait 1.5 seconds before changing text
+
+    }, 50); // Delay for display change
 }
 
 // --- End of script ---
